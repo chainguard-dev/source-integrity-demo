@@ -1,2 +1,2 @@
 # source-integrity-demo
-# hi customer
+# Enforcing source code integrity through gitsign
