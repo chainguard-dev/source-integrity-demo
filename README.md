@@ -2,7 +2,10 @@
 
 ## Install
 
-Install gitsign: https://github.com/sigstore/gitsign
+Install [gitsign:](https://github.com/sigstore/gitsign)
+```
+go install github.com/sigstore/gitsign@latest
+```
 
 ### Prep (one-time only)
 ```
