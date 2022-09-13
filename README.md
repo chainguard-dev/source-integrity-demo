@@ -15,10 +15,12 @@ git config --local gpg.format x509  # Gitsign expects x509 args
 git config --local tag.gpgsign true  # Sign all tags
 ```
 
-Trigger a new build:
+### Demo  (Enforce gitsign)
 ```
-$ date >> tests/date.out  && git add tests/date.out && git commit -m 'adding date to date.out' \
-$ git push \
+$ git branch
+$ git checkout -b enforce-gitsign-branch
+$ date >> date.out && git add date.out && git commit -m 'adding date to date.out in enforce-gitsign-branch'
+$ git push --set-upstream origin enforce-gitsign-branch
 ```
 
 ## Cleanup
