@@ -125,29 +125,7 @@ jobs:
         env:
          COSIGN_EXPERIMENTAL: "true"
         run: |
-          export TRIVY_SCAN=trivy-results.sarif
-          export SCANNER_URI=$(cat $TRIVY_SCAN | jq .runs[0].tool.driver.informationUri)
-          export SCANNER_VERSION=$(cat $TRIVY_SCAN | jq .runs[0].tool.driver.version)
-          cat <<EOF >>vuln.attestation
-          {
-              "invocation": {
-                "parameters": null,
-                "uri": "https://github.com/chainguard-dev/source-integrity-demo/",
-                "event_id": "$GITHUB_SHA",
-                "builder.id": "$GITHUB_REF"
-              }
-              "scanner": {
-                "uri": "https://github.com/aquasecurity/trivy-action",
-                "version": 0.0.0,
-                "result": $(cat $TRIVY_SCAN | jq .)
-              },
-              "metadata": {
-                "scanStartedOn": "$(TZ=Zulu date "+%Y-%m-%dT%H:%M:%SZ")",
-                "scanFinishedOn": "$(TZ=Zulu date "+%Y-%m-%dT%H:%M:%SZ")"
-              }
-          }
-          EOF
-          cosign attest --predicate vuln.attestation --type=vuln ${{ steps.meta.outputs.tags }}@${{ steps.build-and-push.outputs.digest }} --force 
+          cosign attest --predicate scans/php.att --type=vuln ${{ steps.meta.outputs.tags }}@${{ steps.build-and-push.outputs.digest }} --force 
           
       - name: Sign & attach existing scan result
         if: env.ENABLE_SCANNING != 'true'
