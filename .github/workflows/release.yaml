@@ -23,7 +23,7 @@ jobs:
     env:
       # Uncomment to enable signing and add SBOM - jo
       ENABLE_SIGNING: true
-      ENABLE_SCANNING: false
+      ENABLE_SCANNING: true
        
       # Google Cloud project ID
       PROJECT_ID_DEFAULT: chainguard-demo
