@@ -1,10 +1,10 @@
 apiVersion: policy.sigstore.dev/v1alpha1
 kind: ClusterImagePolicy
 metadata:
-  name: vuln-critical-cve
+  name: vuln-critical-sarif-cve
 spec:
   images:
-    - glob: "gcr.io/image-scans/*"
+    - glob: "gcr.io/chainguard-demo/*"
   authorities:
   - name: vulnatt
     keyless:
