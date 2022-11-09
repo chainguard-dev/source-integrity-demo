@@ -125,14 +125,13 @@ jobs:
         env:
          COSIGN_EXPERIMENTAL: "true"
         run: |
-          cosign attest -predicate scans/trivy-results.sarif --type=vuln ${NEW_IMAGE} 
+          cosign attest --predicate scans/trivy-results.sarif --type=vuln ${{ steps.meta.outputs.tags }}@${{ steps.build-and-push.outputs.digest }}
           
       - name: Sign & attach existing scan result
         if: env.ENABLE_SCANNING != 'true'
         env:
          COSIGN_EXPERIMENTAL: "true"
         run: |
-          NEW_IMAGE=${{ steps.meta.outputs.tags }}@${{ steps.build-and-push.outputs.digest }}
           cosign attest --type vuln --predicate att-vuln-critical-cve.json  ${{ steps.meta.outputs.tags }}@${{ steps.build-and-push.outputs.digest }}
           
       - name: Connect to cluster
