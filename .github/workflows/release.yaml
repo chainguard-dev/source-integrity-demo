@@ -118,15 +118,14 @@ jobs:
           ignore-unfixed: true
           vuln-type: 'os,library'
           severity: 'CRITICAL,HIGH'
-          output: 'scans/trivy-results.sarif'
+          output: 'trivy-results.sarif'
         
       - name: Sign & attach new scan result
-        uses: sergeysova/jq-action@v2
         if: env.ENABLE_SCANNING == 'true'
         env:
          COSIGN_EXPERIMENTAL: "true"
         run: |
-          export TRIVY_SCAN=scans/trivy-results.sarif
+          export TRIVY_SCAN=trivy-results.sarif
           export SCANNER_URI=$(cat $TRIVY_SCAN | jq .runs[0].tool.driver.informationUri)
           export SCANNER_VERSION=$(cat $TRIVY_SCAN | jq .runs[0].tool.driver.version)
           cat <<EOF >>scans/vuln.attestation
