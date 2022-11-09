@@ -69,51 +69,40 @@ jobs:
       - uses: 'google-github-actions/setup-gcloud@v0'
         with:
           project_id: ${{ env.PROJECT_ID }}
-      - run: gcloud auth configure-docker
-
-      - name: Build the image
-        env:
-          KO_DOCKER_REPO: gcr.io/${{ env.PROJECT_ID }}/demo-app
-        run: |
-          #Set this to use cyclonedx, default is spdx SBOM=cyclonedx
-          if [ -z "$ENABLE_SIGNING" ]; then
-            SBOM=none
-          fi
-          #ko build --bare --sbom=$SBOM --image-refs=ko.images .
-          #Use SDPX Default
-          ko build --bare --image-refs=ko.images .
-
-      - uses: sigstore/cosign-installer@main
-        if: env.ENABLE_SIGNING == 'true'
+          run: |-
+            gcloud auth configure-docker
+      - name: Docker configuration
+          run: |-
+            echo ${{steps.auth.outputs.access_token}} | docker login -u oauth2accesstoken --password-stdin https://$GAR_LOCATION-docker.pkg.dev
+            # Get the GKE credentials so we can deploy to the cluster
+      - name: Set up GKE credentials
+        uses: google-github-actions/get-gke-credentials@v0
         with:
-         cosign-release: 'v1.13.1'
+          cluster_name: ${{ env.GKE_CLUSTER }}
+          location: ${{ env.GKE_ZONE }}
 
-      - name: Sign the container image
-        if: env.ENABLE_SIGNING == 'true'
-        env:
-         COSIGN_EXPERIMENTAL: "true"
-        run: cosign sign $(cat ko.images) --force
-        
-      - name: Sign the container image
-        if: env.ENABLE_SIGNING == 'true'
-        env:
-         COSIGN_EXPERIMENTAL: "true"
-        run: |
-          cosign download sbom $(cat ko.images) --output-file=ko.sbom
-          cosign attest -predicate ko.sbom --type=spdx $(cat ko.images)
-          
-      - name: Connect to cluster
-        run: |
-          # This is the name of the cluster provisioned by our terraform templates.
-          gcloud container clusters get-credentials ${{ env.CLUSTER_NAME }} --zone ${{ env.CLUSTER_LOCATION }} --project ${{ env.PROJECT_ID }}
+      # Build the Docker image
+      - name: Build
+        run: |-
+          docker build \
+            --tag "$GAR_LOCATION-docker.pkg.dev/$PROJECT_ID/$REPOSITORY/$IMAGE:$GITHUB_SHA" \
+            --build-arg GITHUB_SHA="$GITHUB_SHA" \
+            --build-arg GITHUB_REF="$GITHUB_REF" \
+            .
+      # Push the Docker image to Google Artifact Registry
+      - name: Publish
+        run: |-
+          docker push "$GAR_LOCATION-docker.pkg.dev/$PROJECT_ID/$REPOSITORY/$IMAGE:$GITHUB_SHA"
+      # Set up kustomize
+      - name: Set up Kustomize
+        run: |-
+          curl -sfLo kustomize https://github.com/kubernetes-sigs/kustomize/releases/download/v3.1.0/kustomize_3.1.0_linux_amd64
+          chmod u+x ./kustomize
+      # Deploy the Docker image to the GKE cluster
       - name: Deploy
-        run: |
-          echo Deploying $(cat ko.images)
-          DEPLOYMENT_NAME="example-deployment"
-          CONTAINER_NAME="$(kubectl get deployment ${DEPLOYMENT_NAME} -o json 2>/dev/null | jq -r '.spec.template.spec.containers[0].name')"
-          if [[ "${CONTAINER_NAME}" ==  "" ]]; then
-            # If the deployment does not already exist, create it
-            kubectl create deployment ${DEPLOYMENT_NAME} --image=$(cat ko.images)
-          else
-            kubectl set image deployment/${DEPLOYMENT_NAME} ${CONTAINER_NAME}=$(cat ko.images)
-          fi
+        run: |-
+          # replacing the image name in the k8s template
+          ./kustomize edit set image LOCATION-docker.pkg.dev/PROJECT_ID/REPOSITORY/IMAGE:TAG=$GAR_LOCATION-docker.pkg.dev/$PROJECT_ID/$REPOSITORY/$IMAGE:$GITHUB_SHA
+          ./kustomize build . | kubectl apply -f -
+          kubectl rollout status deployment/$DEPLOYMENT_NAME
+          kubectl get services -o wide
