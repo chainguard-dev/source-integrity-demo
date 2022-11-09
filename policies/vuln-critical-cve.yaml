@@ -1,0 +1,52 @@
+apiVersion: policy.sigstore.dev/v1alpha1
+kind: ClusterImagePolicy
+metadata:
+  name: vuln-critical-cve
+spec:
+  images:
+    - glob: "gcr.io/image-scans/*"
+  authorities:
+  - name: vulnatt
+    keyless:
+      url: "https://fulcio.sigstore.dev"
+      identities:
+        - issuer: "*"
+          subject: "*"
+    attestations:
+    - predicateType: vuln
+      name: vulnkeyless
+      policy:
+        type: cue
+        data: |
+          import (
+            "list"
+            "strings"
+            "strconv"
+          )
+
+          predicateType: "cosign.sigstore.dev/attestation/vuln/v1"
+          predicate: {
+            scanner: {
+              result: {
+                runs: [...{
+                  tool: {
+                    driver: {
+                      rules: [...{
+                        id: id
+                          properties: {
+                            "security-severity": string
+                            severityFloat: strconv.ParseFloat(properties."security-severity", 16)
+                            if severityFloat > 9.0 {
+                              expectedError: "no error",
+                              err: strings.Join(["Error: contains high severity vulnerability", id, properties."security-severity"], " ")
+                              expectedError: err
+                           }
+                         }
+                      }]
+                    }
+                  }
+                }]
+              }
+            }
+          }
+
