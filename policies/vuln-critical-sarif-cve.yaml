@@ -1,17 +1,16 @@
 apiVersion: policy.sigstore.dev/v1alpha1
 kind: ClusterImagePolicy
 metadata:
-  name: vuln-critical-sarif-git puscve
+  name: vuln-critical-sarif-cve
 spec:
   images:
     - glob: "gcr.io/chainguard-demo/*"
   authorities:
-  - name: vulnatt
-    keyless:
-      url: "https://fulcio.sigstore.dev"
+  - keyless:
+      url: https://fulcio.sigstore.dev
       identities:
-        - issuer: "*"
-          subject: "*"
+      - issuer: https://token.actions.githubusercontent.com
+        subject: https://github.com/chainguard-dev/source-integrity-demo/.github/workflows/release.yaml@refs/heads/main
     attestations:
     - predicateType: vuln
       name: vulnkeyless
@@ -19,13 +18,16 @@ spec:
         type: cue
         data: |
           import (
-            "list"
-            "strings"
-            "strconv"
-          )
-
-          predicateType: "cosign.sigstore.dev/attestation/vuln/v1"
-          predicate: {
+          "encoding/json"
+          "strings"
+          "strconv"
+        )
+        #Predicate: {
+          Data: string
+          Timestamp: string
+          ...
+        }
+        predicate: {
             scanner: {
               result: {
                 runs: [...{
