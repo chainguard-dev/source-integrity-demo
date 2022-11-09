@@ -22,7 +22,7 @@ jobs:
     # PROJECT_ID, WORKLOAD_IDENTITY_PROVIDER, SERVICE_ACCOUNT_NAME, CLUSTER_NAME, CLUSTER_LOCATION
     env:
       # Uncomment to enable signing and add SBOM - jo
-      ENABLE_SIGNING: true
+      ENABLE_SIGNING: false
        
       # Google Cloud project ID
       PROJECT_ID_DEFAULT: chainguard-demo
@@ -32,7 +32,7 @@ jobs:
   
       # To properly set this up, see "Setting up Identity Federation for GitHub Actions"
       # https://cloud.google.com/blog/products/identity-security/enabling-keyless-authentication-from-github-actions
-      WORKLOAD_IDENTITY_PROVIDER_DEFAULT: projects/895401504149/locations/global/workloadIdentityPools/github-actions-pool/attribute.repository/chainguard-dev/source-integrity-demo
+      WORKLOAD_IDENTITY_PROVIDER_DEFAULT: projects/895401504149/locations/global/workloadIdentityPools/github-actions-pool/providers/github-actions-provider
       
       # This service account must have write access to GCR and the GKE cluster
       SERVICE_ACCOUNT_NAME_DEFAULT: github-actions
