@@ -112,7 +112,7 @@ jobs:
          COSIGN_EXPERIMENTAL: "true"
         uses: aquasecurity/trivy-action@master
         with:
-          image-ref: ${NEW_IMAGE}
+          image-ref: ${{ steps.meta.outputs.tags }}@${{ steps.build-and-push.outputs.digest }}
           format: 'sarif'
           exit-code: '1'
           ignore-unfixed: true
