@@ -40,12 +40,12 @@ git config --local tag.gpgsign true  # Sign all tags
 # Uncomment kms in .source.yaml - https://github.com/web-flow.gpg
 # # Browser update README.md in a new PR
 
-# Cleanup
+# Cleanup 
 cp -p ~/.gitconfig.bak ~/.gitconfig
 git checkout main
 # If it's local use: git branch -d enforce-gitsign-branch
 git push origin -d enforce-gitsign-branch
-# Comment out GitHub kms key in source.yaml
+# Comment out GitHub kms key - https://github.com/chainguard-dev/source-integrity-demo/blob/main/.chainguard/source.yaml
 cd /home/josborne/code/demos/gitsign/repos && rm -rf /home/josborne/code/demos/gitsign/repos/source-integrity-demo
 
 # chainctl policies create --group $DEMO_GROUP -f policies/signed-build-system.yaml
