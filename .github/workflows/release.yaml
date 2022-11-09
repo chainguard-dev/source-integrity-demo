@@ -23,10 +23,9 @@ jobs:
     env:
       # Uncomment to enable signing and add SBOM - jo
       ENABLE_SIGNING: true
- 
+       
       # Google Cloud project ID
       PROJECT_ID_DEFAULT: chainguard-demo
-      PROJECT_ID_OVERRIDE: ${{ secrets.PROJECT_ID }}
       
       REGISTRY: gcr.io
       IMAGE_NAME: chainguard-demo/demo-app
@@ -34,17 +33,13 @@ jobs:
       # To properly set this up, see "Setting up Identity Federation for GitHub Actions"
       # https://cloud.google.com/blog/products/identity-security/enabling-keyless-authentication-from-github-actions
       WORKLOAD_IDENTITY_PROVIDER_DEFAULT: projects/895401504149/locations/global/workloadIdentityPools/github-actions-pool/providers/github-actions-provider
-      WORKLOAD_IDENTITY_PROVIDER_OVERRIDE: ${{ secrets.WORKLOAD_IDENTITY_PROVIDER }}
 
       # This service account must have write access to GCR and the GKE cluster
       SERVICE_ACCOUNT_NAME_DEFAULT: github-actions
-      SERVICE_ACCOUNT_NAME_OVERRIDE: ${{ secrets.SERVICE_ACCOUNT_NAME }}
 
       # GKE cluster details
       CLUSTER_NAME_DEFAULT: chainguard-dev
       CLUSTER_LOCATION_DEFAULT: us-west1
-      CLUSTER_NAME_OVERRIDE: ${{ secrets.CLUSTER_NAME }}
-      CLUSTER_LOCATION_OVERRIDE: ${{ secrets.CLUSTER_LOCATION }}
 
     steps:
       - name: 'Setup env vars'
