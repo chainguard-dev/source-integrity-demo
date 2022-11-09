@@ -1,1 +1,1 @@
-FROM cgr.dev/chainguard/jdk@sha256:d8f435ffab139985ab2d505031c8507fc25eedbae0f91bc71edc1914029263da
+FROM docker.io/library/nginx@sha256:10f14ffa93f8dedf1057897b745e5ac72ac5655c299dade0aa434c71557697ea
