@@ -22,7 +22,7 @@ jobs:
     # PROJECT_ID, WORKLOAD_IDENTITY_PROVIDER, SERVICE_ACCOUNT_NAME, CLUSTER_NAME, CLUSTER_LOCATION
     env:
       # Uncomment to enable signing and add SBOM - jo
-#       ENABLE_SIGNING: true
+      ENABLE_SIGNING: true
 #       ENABLE_SCANNING: true
        
       # Google Cloud project ID
