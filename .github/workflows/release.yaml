@@ -128,7 +128,7 @@ jobs:
           export TRIVY_SCAN=trivy-results.sarif
           export SCANNER_URI=$(cat $TRIVY_SCAN | jq .runs[0].tool.driver.informationUri)
           export SCANNER_VERSION=$(cat $TRIVY_SCAN | jq .runs[0].tool.driver.version)
-          cat <<EOF >>scans/vuln.attestation
+          cat <<EOF >>vuln.attestation
           {
               "invocation": {
                 "parameters": null,
@@ -147,7 +147,7 @@ jobs:
               }
           }
           EOF
-          cosign attest --predicate scans/trivy-results.sarif --type=vuln ${{ steps.meta.outputs.tags }}@${{ steps.build-and-push.outputs.digest }} --force 
+          cosign attest --predicate vuln.attestation --type=vuln ${{ steps.meta.outputs.tags }}@${{ steps.build-and-push.outputs.digest }} --force 
           
       - name: Sign & attach existing scan result
         if: env.ENABLE_SCANNING != 'true'
