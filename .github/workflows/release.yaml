@@ -64,13 +64,6 @@ jobs:
           project_id: ${{ env.PROJECT_ID }}
       - run: gcloud auth configure-docker
       
-
-      - uses: 'google-github-actions/setup-gcloud@v0'
-        with:
-          project_id: ${{ env.PROJECT_ID }}
-          run: |-
-            gcloud auth configure-docker
-            
       - name: Docker configuration
         run:  echo ${{steps.auth.outputs.access_token}} | docker login -u oauth2accesstoken --password-stdin https://$GAR_LOCATION-docker.pkg.dev
         
