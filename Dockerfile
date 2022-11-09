@@ -1,1 +1,1 @@
-FROM docker.io/library/nginx@sha256:10f14ffa93f8dedf1057897b745e5ac72ac5655c299dade0aa434c71557697ea
+FROM cgr.dev/chainguard/php:latest
