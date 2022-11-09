@@ -103,15 +103,27 @@ jobs:
         run: |
           NEW_IMAGE=${{ steps.meta.outputs.tags }}@${{ steps.build-and-push.outputs.digest }}
           cosign sign ${NEW_IMAGE} --force
-          
+      
       - name: Rescan image
         if: env.ENABLE_SCANNING == 'true'
         env:
          COSIGN_EXPERIMENTAL: "true"
+        uses: aquasecurity/trivy-action@master
+        with:
+          image-ref: ${NEW_IMAGE}
+          format: 'sarif'
+          exit-code: '1'
+          ignore-unfixed: true
+          vuln-type: 'os,library'
+          severity: 'CRITICAL,HIGH'
+          output: 'trivy-results.sarif'
+        
+      - name: Sign & attach SBOM
+        if: env.ENABLE_SCANNING == 'true'
+        env:
+         COSIGN_EXPERIMENTAL: "true"
         run: |
-          NEW_IMAGE=${{ steps.meta.outputs.tags }}@${{ steps.build-and-push.outputs.digest }}
-          trivy image --format sarif -o scans/sbom-new.sarif ${NEW_IMAGE}
-          export TRIVY_SCAN=scans/sbom-new.sarif
+          export TRIVY_SCAN=scans/trivy-results.sarif
           export SCANNER_URI=$(cat $TRIVY_SCAN | jq .runs[0].tool.driver.informationUri)
           export SCANNER_VERSION=$(cat $TRIVY_SCAN | jq .runs[0].tool.driver.version)
           cat > scans/vuln.attestation <<EOF
@@ -133,18 +145,16 @@ jobs:
               }
           }
           EOF         
-        
+          cosign attest -predicate scans/trivy-results.sarif --type=vuln ${NEW_IMAGE} 
+          
       - name: Sign & attach SBOM
+        if: env.ENABLE_SCANNING != 'true'
         env:
          COSIGN_EXPERIMENTAL: "true"
         run: |
           NEW_IMAGE=${{ steps.meta.outputs.tags }}@${{ steps.build-and-push.outputs.digest }}
-          if [ -z "$ENABLE_SCANNING" ]; then
-            cosign attest --type vuln --predicate att-vuln-critical-cve.json  ${{ steps.meta.outputs.tags }}@${{ steps.build-and-push.outputs.digest }}
-          else
-            cosign attest -predicate scans/sbom-new.sarif --type=vuln ${NEW_IMAGE} 
-          fi
-        
+          cosign attest --type vuln --predicate att-vuln-critical-cve.json  ${{ steps.meta.outputs.tags }}@${{ steps.build-and-push.outputs.digest }}
+          
       - name: Connect to cluster
         run: |
           # This is the name of the cluster provisioned by our terraform templates.
