@@ -5,8 +5,6 @@ on:
   # Triggers the workflow on push or pull request events but only for the "main" branch
   push:
     branches: [ "main" ]
-    tags:
-      - 'latest'
   pull_request:
     branches: [ "main" ]
 
@@ -82,9 +80,8 @@ jobs:
         uses: docker/metadata-action@98669ae865ea3cffbcbaa878cf57c20bbf1c6c38
         with:
           images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
-          tags: |
-            # set latest tag for default branch
-            type=raw,value=latest
+          flavor: |
+            latest=auto
      
       # Build the Docker image
       - name: Build and push Docker image
