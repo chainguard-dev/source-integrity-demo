@@ -1,0 +1,119 @@
+name: Release Latest Changes
+
+# Controls when the workflow will run
+on:
+  # Triggers the workflow on push or pull request events but only for the "main" branch
+  push:
+    branches: [ "main" ]
+  pull_request:
+    branches: [ "main" ]
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+      id-token: write
+
+    # The "_DEFAULT" env vars below allow this to work out-of-the-box under "chainguard-dev" org.
+    # The "_OVERRIDE" env vars below override the default ones, and are sourced from GitHub secrets.
+    # If running this workflow from a fork, you must set the following secrets in your repository settings:
+    # PROJECT_ID, WORKLOAD_IDENTITY_PROVIDER, SERVICE_ACCOUNT_NAME, CLUSTER_NAME, CLUSTER_LOCATION
+    env:
+      # Uncomment to enable signing and add SBOM - jo
+      ENABLE_SIGNING: true
+
+      # Google Cloud project ID
+      PROJECT_ID_DEFAULT: chainguard-demo
+      PROJECT_ID_OVERRIDE: ${{ secrets.PROJECT_ID }}
+
+      # To properly set this up, see "Setting up Identity Federation for GitHub Actions"
+      # https://cloud.google.com/blog/products/identity-security/enabling-keyless-authentication-from-github-actions
+      WORKLOAD_IDENTITY_PROVIDER_DEFAULT: projects/895401504149/locations/global/workloadIdentityPools/github-actions-pool/providers/github-actions-provider
+      WORKLOAD_IDENTITY_PROVIDER_OVERRIDE: ${{ secrets.WORKLOAD_IDENTITY_PROVIDER }}
+
+      # This service account must have write access to GCR and the GKE cluster
+      SERVICE_ACCOUNT_NAME_DEFAULT: github-actions
+      SERVICE_ACCOUNT_NAME_OVERRIDE: ${{ secrets.SERVICE_ACCOUNT_NAME }}
+
+      # GKE cluster details
+      CLUSTER_NAME_DEFAULT: chainguard-dev
+      CLUSTER_LOCATION_DEFAULT: us-west1
+      CLUSTER_NAME_OVERRIDE: ${{ secrets.CLUSTER_NAME }}
+      CLUSTER_LOCATION_OVERRIDE: ${{ secrets.CLUSTER_LOCATION }}
+
+    steps:
+      - name: 'Setup env vars'
+        run: |
+          echo "PROJECT_ID=${PROJECT_ID_OVERRIDE:-${PROJECT_ID_DEFAULT}}" >> $GITHUB_ENV
+          echo "WORKLOAD_IDENTITY_PROVIDER=${WORKLOAD_IDENTITY_PROVIDER_OVERRIDE:-${WORKLOAD_IDENTITY_PROVIDER_DEFAULT}}" >> $GITHUB_ENV
+          echo "SERVICE_ACCOUNT_NAME=${SERVICE_ACCOUNT_NAME_OVERRIDE:-${SERVICE_ACCOUNT_NAME_DEFAULT}}" >> $GITHUB_ENV
+          echo "CLUSTER_NAME=${CLUSTER_NAME_OVERRIDE:-${CLUSTER_NAME_DEFAULT}}" >> $GITHUB_ENV
+          echo "CLUSTER_LOCATION=${CLUSTER_LOCATION_OVERRIDE:-${CLUSTER_LOCATION_DEFAULT}}" >> $GITHUB_ENV
+      - uses: actions/checkout@v2
+      - uses: actions/setup-go@v3
+        with:
+          go-version: 1.18
+          check-latest: true
+      - uses: imjasonh/setup-ko@v0.4
+        with:
+          version: v0.11.2
+
+      - name: 'Authenticate to Google Cloud'
+        uses: 'google-github-actions/auth@v0'
+        with:
+          # Default is to generate a key file, which is automatically configured for use with gcloud.
+          workload_identity_provider: '${{ env.WORKLOAD_IDENTITY_PROVIDER }}'
+          service_account: '${{ env.SERVICE_ACCOUNT_NAME }}@${{ env.PROJECT_ID }}.iam.gserviceaccount.com'
+      - uses: 'google-github-actions/setup-gcloud@v0'
+        with:
+          project_id: ${{ env.PROJECT_ID }}
+      - run: gcloud auth configure-docker
+
+      - name: Build the image
+        env:
+          KO_DOCKER_REPO: gcr.io/${{ env.PROJECT_ID }}/demo-app
+        run: |
+          #Set this to use cyclonedx, default is spdx SBOM=cyclonedx
+          if [ -z "$ENABLE_SIGNING" ]; then
+            SBOM=none
+          fi
+          #ko build --bare --sbom=$SBOM --image-refs=ko.images .
+          #Use SDPX Default
+          ko build --bare --image-refs=ko.images .
+
+      - uses: sigstore/cosign-installer@main
+        if: env.ENABLE_SIGNING == 'true'
+        with:
+         cosign-release: 'v1.13.1'
+
+      - name: Sign the container image
+        if: env.ENABLE_SIGNING == 'true'
+        env:
+         COSIGN_EXPERIMENTAL: "true"
+        run: cosign sign $(cat ko.images) --force
+        
+      - name: Sign the container image
+        if: env.ENABLE_SIGNING == 'true'
+        env:
+         COSIGN_EXPERIMENTAL: "true"
+        run: |
+          cosign download sbom $(cat ko.images) --output-file=ko.sbom
+          cosign attest -predicate ko.sbom --type=spdx $(cat ko.images)
+          
+      - name: Connect to cluster
+        run: |
+          # This is the name of the cluster provisioned by our terraform templates.
+          gcloud container clusters get-credentials ${{ env.CLUSTER_NAME }} --zone ${{ env.CLUSTER_LOCATION }} --project ${{ env.PROJECT_ID }}
+      - name: Deploy
+        run: |
+          echo Deploying $(cat ko.images)
+          DEPLOYMENT_NAME="example-deployment"
+          CONTAINER_NAME="$(kubectl get deployment ${DEPLOYMENT_NAME} -o json 2>/dev/null | jq -r '.spec.template.spec.containers[0].name')"
+          if [[ "${CONTAINER_NAME}" ==  "" ]]; then
+            # If the deployment does not already exist, create it
+            kubectl create deployment ${DEPLOYMENT_NAME} --image=$(cat ko.images)
+          else
+            kubectl set image deployment/${DEPLOYMENT_NAME} ${CONTAINER_NAME}=$(cat ko.images)
+          fi
