@@ -24,10 +24,16 @@ jobs:
       # Uncomment to enable signing and add SBOM - jo
       ENABLE_SIGNING: true
 
+      REGISTRY: gcr.io
+      IMAGE_NAME: ${{ env.PROJECT_ID }}/demo-app
+  
       # Google Cloud project ID
       PROJECT_ID_DEFAULT: chainguard-demo
       PROJECT_ID_OVERRIDE: ${{ secrets.PROJECT_ID }}
-
+      
+      REGISTRY: gcr.io
+      IMAGE_NAME: ${{ env.PROJECT_ID }}/demo-app
+  
       # To properly set this up, see "Setting up Identity Federation for GitHub Actions"
       # https://cloud.google.com/blog/products/identity-security/enabling-keyless-authentication-from-github-actions
       WORKLOAD_IDENTITY_PROVIDER_DEFAULT: projects/895401504149/locations/global/workloadIdentityPools/github-actions-pool/providers/github-actions-provider
@@ -57,8 +63,7 @@ jobs:
         uses: 'google-github-actions/auth@v0'
         with:
           workload_identity_provider: '${{ env.WORKLOAD_IDENTITY_PROVIDER }}'
-          service_account: '${{ env.SERVICE_ACCOUNT_NAME }}@${{ env.PROJECT_ID }}.iam.gserviceaccount.com'
-        
+          service_account: '${{ env.SERVICE_ACCOUNT_NAME }}@${{ env.PROJECT_ID }}.iam.gserviceaccount.com'        
       - uses: 'google-github-actions/setup-gcloud@v0'
         with:
           project_id: ${{ env.PROJECT_ID }}
@@ -85,17 +90,4 @@ jobs:
       # Push the Docker image to Google Artifact Registry
       - name: Publish
         run: |-
-          docker push "$GAR_LOCATION-docker.pkg.dev/$PROJECT_ID/$REPOSITORY/$IMAGE:$GITHUB_SHA"
-      # Set up kustomize
-      - name: Set up Kustomize
-        run: |-
-          curl -sfLo kustomize https://github.com/kubernetes-sigs/kustomize/releases/download/v3.1.0/kustomize_3.1.0_linux_amd64
-          chmod u+x ./kustomize
-      # Deploy the Docker image to the GKE cluster
-      - name: Deploy
-        run: |-
-          # replacing the image name in the k8s template
-          ./kustomize edit set image LOCATION-docker.pkg.dev/PROJECT_ID/REPOSITORY/IMAGE:TAG=$GAR_LOCATION-docker.pkg.dev/$PROJECT_ID/$REPOSITORY/$IMAGE:$GITHUB_SHA
-          ./kustomize build . | kubectl apply -f -
-          kubectl rollout status deployment/$DEPLOYMENT_NAME
-          kubectl get services -o wide
+          docker push "gcr.io/${{ env.PROJECT_ID }}/demo-app"
