@@ -118,7 +118,7 @@ jobs:
           ignore-unfixed: true
           vuln-type: 'os,library'
           severity: 'CRITICAL,HIGH'
-          output: 'trivy-results.sarif'
+          output: 'scans/trivy-results.sarif'
         
       - name: Sign & attach new scan result
         if: env.ENABLE_SCANNING == 'true'
