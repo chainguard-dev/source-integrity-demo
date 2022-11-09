@@ -33,7 +33,7 @@ jobs:
       # To properly set this up, see "Setting up Identity Federation for GitHub Actions"
       # https://cloud.google.com/blog/products/identity-security/enabling-keyless-authentication-from-github-actions
       WORKLOAD_IDENTITY_PROVIDER_DEFAULT: projects/895401504149/locations/global/workloadIdentityPools/github-actions-pool/providers/github-actions-provider
-
+      
       # This service account must have write access to GCR and the GKE cluster
       SERVICE_ACCOUNT_NAME_DEFAULT: github-actions
 
@@ -49,8 +49,10 @@ jobs:
           echo "SERVICE_ACCOUNT_NAME=${SERVICE_ACCOUNT_NAME_OVERRIDE:-${SERVICE_ACCOUNT_NAME_DEFAULT}}" >> $GITHUB_ENV
           echo "CLUSTER_NAME=${CLUSTER_NAME_OVERRIDE:-${CLUSTER_NAME_DEFAULT}}" >> $GITHUB_ENV
           echo "CLUSTER_LOCATION=${CLUSTER_LOCATION_OVERRIDE:-${CLUSTER_LOCATION_DEFAULT}}" >> $GITHUB_ENV
-      - uses: actions/checkout@v2
       
+      - name: Checkout
+        uses: actions/checkout@v3
+    
       - id: 'auth'
         name: 'Authenticate to Google Cloud'
         uses: 'google-github-actions/auth@v0'
