@@ -96,13 +96,14 @@ jobs:
           gcloud container clusters get-credentials ${{ env.CLUSTER_NAME }} --zone ${{ env.CLUSTER_LOCATION }} --project ${{ env.PROJECT_ID }}
       - name: Deploy
         run: |
-          echo Deploying $(cat ko.images)
+          NEW_IMAGE=${{ steps.meta.outputs.tags }}@${{ steps.build-and-push.outputs.digest }}
+          echo Deploying ${NEW_IMAGE}
           DEPLOYMENT_NAME="example-deployment"
           CONTAINER_NAME="$(kubectl get deployment ${DEPLOYMENT_NAME} -o json 2>/dev/null | jq -r '.spec.template.spec.containers[0].name')"
           if [[ "${CONTAINER_NAME}" ==  "" ]]; then
             # If the deployment does not already exist, create it
-            kubectl create deployment ${DEPLOYMENT_NAME} --image=$(cat ko.images)
+            kubectl create deployment ${DEPLOYMENT_NAME} --image=${NEW_IMAGE}
           else
-            kubectl set image deployment/${DEPLOYMENT_NAME} ${CONTAINER_NAME}=$(cat ko.images)
+            kubectl set image deployment/${DEPLOYMENT_NAME} ${CONTAINER_NAME}=${NEW_IMAGE}
           fi
   
