@@ -118,7 +118,7 @@ jobs:
           severity: 'CRITICAL,HIGH'
           output: 'trivy-results.sarif'
         
-      - name: Sign & attach SBOM
+      - name: Sign & attach new scan result
         if: env.ENABLE_SCANNING == 'true'
         env:
          COSIGN_EXPERIMENTAL: "true"
@@ -147,7 +147,7 @@ jobs:
           EOF         
           cosign attest -predicate scans/trivy-results.sarif --type=vuln ${NEW_IMAGE} 
           
-      - name: Sign & attach SBOM
+      - name: Sign & attach existing scan result
         if: env.ENABLE_SCANNING != 'true'
         env:
          COSIGN_EXPERIMENTAL: "true"
