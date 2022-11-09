@@ -23,16 +23,13 @@ jobs:
     env:
       # Uncomment to enable signing and add SBOM - jo
       ENABLE_SIGNING: true
-
-      REGISTRY: gcr.io
-      IMAGE_NAME: ${{ env.PROJECT_ID }}/demo-app
-  
+ 
       # Google Cloud project ID
       PROJECT_ID_DEFAULT: chainguard-demo
       PROJECT_ID_OVERRIDE: ${{ secrets.PROJECT_ID }}
       
       REGISTRY: gcr.io
-      IMAGE_NAME: ${{ env.PROJECT_ID }}/demo-app
+      IMAGE_NAME: chainguard-demo/demo-app
   
       # To properly set this up, see "Setting up Identity Federation for GitHub Actions"
       # https://cloud.google.com/blog/products/identity-security/enabling-keyless-authentication-from-github-actions
