@@ -53,14 +53,17 @@ jobs:
           echo "CLUSTER_LOCATION=${CLUSTER_LOCATION_OVERRIDE:-${CLUSTER_LOCATION_DEFAULT}}" >> $GITHUB_ENV
       - uses: actions/checkout@v2
       
-      # Configure Workload Identity Federation and generate an access token.
-      - id: 'auth'
-        name: 'Authenticate to Google Cloud'
+      - name: 'Authenticate to Google Cloud'
         uses: 'google-github-actions/auth@v0'
         with:
-          token_format: 'access_token'
-          workload_identity_provider: 'projects/123456789/locations/global/workloadIdentityPools/my-pool/providers/my-provider'
-          service_account: 'my-service-account@my-project.iam.gserviceaccount.com'
+          # Default is to generate a key file, which is automatically configured for use with gcloud.
+          workload_identity_provider: '${{ env.WORKLOAD_IDENTITY_PROVIDER }}'
+          service_account: '${{ env.SERVICE_ACCOUNT_NAME }}@${{ env.PROJECT_ID }}.iam.gserviceaccount.com'
+      - uses: 'google-github-actions/setup-gcloud@v0'
+        with:
+          project_id: ${{ env.PROJECT_ID }}
+      - run: gcloud auth configure-docker
+      
 
       - uses: 'google-github-actions/setup-gcloud@v0'
         with:
