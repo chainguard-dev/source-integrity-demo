@@ -22,7 +22,8 @@ jobs:
     # PROJECT_ID, WORKLOAD_IDENTITY_PROVIDER, SERVICE_ACCOUNT_NAME, CLUSTER_NAME, CLUSTER_LOCATION
     env:
       # Uncomment to enable signing and add SBOM - jo
-      ENABLE_SIGNING: false
+      ENABLE_SIGNING: true
+      ENABLE_SCANNING: false
        
       # Google Cloud project ID
       PROJECT_ID_DEFAULT: chainguard-demo
@@ -89,7 +90,61 @@ jobs:
           push: ${{ github.event_name != 'pull_request' }}
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
+      
+      - uses: sigstore/cosign-installer@main
+        if: env.ENABLE_SIGNING == 'true'
+        with:
+         cosign-release: 'v1.13.1'
+
+      - name: Sign the container image
+        if: env.ENABLE_SIGNING == 'true'
+        env:
+         COSIGN_EXPERIMENTAL: "true"
+        run: |
+          NEW_IMAGE=${{ steps.meta.outputs.tags }}@${{ steps.build-and-push.outputs.digest }}
+          cosign sign ${NEW_IMAGE} --force
           
+      - name: Rescan image
+        if: env.ENABLE_SCANNING == 'true'
+        env:
+         COSIGN_EXPERIMENTAL: "true"
+        run: |
+          NEW_IMAGE=${{ steps.meta.outputs.tags }}@${{ steps.build-and-push.outputs.digest }}
+          trivy image --format sarif -o scans/sbom-new.sarif ${NEW_IMAGE}
+          export TRIVY_SCAN=scans/sbom-new.sarif
+          export SCANNER_URI=$(cat $TRIVY_SCAN | jq .runs[0].tool.driver.informationUri)
+          export SCANNER_VERSION=$(cat $TRIVY_SCAN | jq .runs[0].tool.driver.version)
+          cat > scans/vuln.attestation <<EOF
+          {
+              "invocation": {
+                "parameters": null,
+                "uri": "https://github.com/chainguard-dev/source-integrity-demo/",
+                "event_id": "$GITHUB_SHA",
+                "builder.id": "$GITHUB_REF"
+              }
+              "scanner": {
+                "uri": "https://github.com/aquasecurity/trivy-action",
+                "version": 0.0.0,
+                "result": $(cat $TRIVY_SCAN | jq .)
+              },
+              "metadata": {
+                "scanStartedOn": "$(TZ=Zulu date "+%Y-%m-%dT%H:%M:%SZ")",
+                "scanFinishedOn": "$(TZ=Zulu date "+%Y-%m-%dT%H:%M:%SZ")"
+              }
+          }
+          EOF         
+        
+      - name: Sign & attach SBOM
+        env:
+         COSIGN_EXPERIMENTAL: "true"
+        run: |
+          NEW_IMAGE=${{ steps.meta.outputs.tags }}@${{ steps.build-and-push.outputs.digest }}
+          if [ -z "$ENABLE_SCANNING" ]; then
+            cosign attest --type vuln --predicate att-vuln-critical-cve.json  ${{ steps.meta.outputs.tags }}@${{ steps.build-and-push.outputs.digest }}
+          else
+            cosign attest -predicate scans/sbom-new.sarif --type=vuln ${NEW_IMAGE} 
+          fi
+        
       - name: Connect to cluster
         run: |
           # This is the name of the cluster provisioned by our terraform templates.
