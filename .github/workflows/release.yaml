@@ -67,7 +67,7 @@ jobs:
       - run: gcloud auth configure-docker
       
       - name: Docker configuration
-        run:  echo ${{steps.auth.outputs.access_token}} | docker login -u oauth2accesstoken --password-stdin https://$CLUSTER_LOCATION_DEFAULT-docker.pkg.dev
+        run: gcloud auth print-access-token | docker login -u oauth2accesstoken --password-stdin https://gcr.io
         
       # Build the Docker image
       - name: Build
