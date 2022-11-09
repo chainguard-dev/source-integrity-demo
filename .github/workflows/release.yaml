@@ -57,8 +57,10 @@ jobs:
         uses: 'google-github-actions/auth@v0'
         with:
           # Default is to generate a key file, which is automatically configured for use with gcloud.
+          token_format: 'access_token'
           workload_identity_provider: '${{ env.WORKLOAD_IDENTITY_PROVIDER }}'
           service_account: '${{ env.SERVICE_ACCOUNT_NAME }}@${{ env.PROJECT_ID }}.iam.gserviceaccount.com'
+        
       - uses: 'google-github-actions/setup-gcloud@v0'
         with:
           project_id: ${{ env.PROJECT_ID }}
