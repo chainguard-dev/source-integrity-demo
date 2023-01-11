@@ -1,4 +1,6 @@
 name: Release Latest Changes
+on:
+  workflow_dispatch:
 
 # # Controls when the workflow will run
 # on:
