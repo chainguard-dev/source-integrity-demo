@@ -107,35 +107,12 @@ jobs:
         run: |
           NEW_IMAGE=${{ steps.meta.outputs.tags }}@${{ steps.build-and-push.outputs.digest }}
           cosign sign ${NEW_IMAGE} --force
-      
-      - name: Rescan image
-        if: env.ENABLE_SCANNING == 'true'
-        env:
-         COSIGN_EXPERIMENTAL: "true"
-        uses: aquasecurity/trivy-action@master
-        with:
-          image-ref: ${{ steps.meta.outputs.tags }}@${{ steps.build-and-push.outputs.digest }}
-          format: 'sarif'
-          exit-code: '1'
-          ignore-unfixed: true
-          vuln-type: 'os,library'
-          severity: 'CRITICAL,HIGH'
-          output: 'trivy-results.sarif'
+      - uses: actions/setup-go@v3
+      - name: "install gitsign"
+        run: |
+          go install go install github.com/sigstore/gitsign@latest
+          cosign attest --predicate <(gitsign show) ${NEW_IMAGE}
         
-      - name: Sign & attach new scan result
-        if: env.ENABLE_SCANNING == 'true'
-        env:
-         COSIGN_EXPERIMENTAL: "true"
-        run: |
-          cosign attest --predicate scans/php.att.json --type=vuln ${{ steps.meta.outputs.tags }}@${{ steps.build-and-push.outputs.digest }} --force 
-          
-      - name: Sign & attach existing scan result
-        if: env.ENABLE_SCANNING != 'true'
-        env:
-         COSIGN_EXPERIMENTAL: "true"
-        run: |
-          cosign attest --type vuln --predicate att-vuln-critical-cve.json  ${{ steps.meta.outputs.tags }}@${{ steps.build-and-push.outputs.digest }} --force 
-          
       - name: Connect to cluster
         run: |
           # This is the name of the cluster provisioned by our terraform templates.
