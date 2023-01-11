@@ -95,6 +95,8 @@ jobs:
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
       
+      - uses: actions/setup-go@v3
+      - uses: chainguard-dev/actions/setup-gitsign@main
       - uses: sigstore/cosign-installer@main
         if: env.ENABLE_SIGNING == 'true'
         with:
@@ -106,12 +108,7 @@ jobs:
          COSIGN_EXPERIMENTAL: "true"
         run: |
           NEW_IMAGE=${{ steps.meta.outputs.tags }}@${{ steps.build-and-push.outputs.digest }}
-          cosign sign ${NEW_IMAGE} --force
-      
-      - uses: actions/setup-go@v3
-      - name: "install gitsign"
-        run: |
-          go install github.com/sigstore/gitsign@latest
+          cosign sign ${NEW_IMAGE} --force      
           cosign attest --predicate <(gitsign show) ${NEW_IMAGE}
         
       - name: Connect to cluster
