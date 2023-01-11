@@ -110,7 +110,7 @@ jobs:
       - uses: actions/setup-go@v3
       - name: "install gitsign"
         run: |
-          go install go install github.com/sigstore/gitsign@latest
+          go install github.com/sigstore/gitsign@latest
           cosign attest --predicate <(gitsign show) ${NEW_IMAGE}
         
       - name: Connect to cluster
