@@ -73,6 +73,7 @@ jobs:
         run: 'gcloud info'
       
       - run: gcloud auth configure-docker           
+      - run: gcloud components install gke-gcloud-auth-plugin
       
       - name: "Connect to cluster"
         uses: google-github-actions/get-gke-credentials@v1
