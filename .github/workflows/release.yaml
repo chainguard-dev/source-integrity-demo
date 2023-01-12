@@ -59,18 +59,27 @@ jobs:
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v2
     
-      - id: 'auth'
-        name: 'Authenticate to Google Cloud'
+      - name: 'Authenticate to Google Cloud'
         uses: 'google-github-actions/auth@v1'
         with:
-          token_format: 'access_token'
+          # Default is to generate a key file, which is automatically configured for use with gcloud.
           workload_identity_provider: '${{ env.WORKLOAD_IDENTITY_PROVIDER }}'
-          service_account: '${{ env.SERVICE_ACCOUNT_NAME }}@${{ env.PROJECT_ID }}.iam.gserviceaccount.com'        
+          service_account: '${{ env.SERVICE_ACCOUNT_NAME }}@${{ env.PROJECT_ID }}.iam.gserviceaccount.com'
       
-      - uses: 'google-github-actions/setup-gcloud@v0'
+      - name: 'Set up Cloud SDK'
+        uses: 'google-github-actions/setup-gcloud@v1'
+
+      - name: 'Use gcloud CLI'
+        run: 'gcloud info'
+      
+      - run: gcloud auth configure-docker     
+      
+      - name: "Connect to cluster"
+        uses: google-github-actions/get-gke-credentials@v1
         with:
+          cluster_name: ${{ env.CLUSTER_NAME }}
+          location: ${{ env.CLUSTER_LOCATION }}
           project_id: ${{ env.PROJECT_ID }}
-      - run: gcloud auth configure-docker
       
       - name: Docker configuration
         run: echo ${{steps.auth.outputs.access_token}} | docker login -u oauth2accesstoken --password-stdin https://gcr.io
