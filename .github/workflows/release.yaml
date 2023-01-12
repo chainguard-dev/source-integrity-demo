@@ -30,7 +30,7 @@ jobs:
       PROJECT_ID_DEFAULT: chainguard-demo
       
       REGISTRY: gcr.io
-      IMAGE_NAME: chainguard-demo/demo-app
+      IMAGE_NAME: chainguard-demo/gitsign-app
   
       # To properly set this up, see "Setting up Identity Federation for GitHub Actions"
       # https://cloud.google.com/blog/products/identity-security/enabling-keyless-authentication-from-github-actions
@@ -126,7 +126,7 @@ jobs:
         run: |
           NEW_IMAGE=${{ steps.meta.outputs.tags }}@${{ steps.build-and-push.outputs.digest }}
           echo Deploying ${NEW_IMAGE}
-          DEPLOYMENT_NAME="example-deployment"
+          DEPLOYMENT_NAME="gitsign-deployment"
           CONTAINER_NAME="$(kubectl get deployment ${DEPLOYMENT_NAME} -o json 2>/dev/null | jq -r '.spec.template.spec.containers[0].name')"
           if [[ "${CONTAINER_NAME}" ==  "" ]]; then
             # If the deployment does not already exist, create it
