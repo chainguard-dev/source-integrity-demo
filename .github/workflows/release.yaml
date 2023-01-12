@@ -62,6 +62,7 @@ jobs:
       - name: 'Authenticate to Google Cloud'
         uses: 'google-github-actions/auth@v1'
         with:
+          token_format: 'access_token'
           # Default is to generate a key file, which is automatically configured for use with gcloud.
           workload_identity_provider: '${{ env.WORKLOAD_IDENTITY_PROVIDER }}'
           service_account: '${{ env.SERVICE_ACCOUNT_NAME }}@${{ env.PROJECT_ID }}.iam.gserviceaccount.com'
