@@ -65,13 +65,6 @@ jobs:
           # Default is to generate a key file, which is automatically configured for use with gcloud.
           workload_identity_provider: '${{ env.WORKLOAD_IDENTITY_PROVIDER }}'
           service_account: '${{ env.SERVICE_ACCOUNT_NAME }}@${{ env.PROJECT_ID }}.iam.gserviceaccount.com'
-      
-      - name: Login to GCR
-        uses: docker/login-action@v2
-        with:
-          registry: gcr.io
-          username: oauth2accesstoken
-          password: ${{ steps.auth.outputs.access_token }}
             
       - name: 'Set up Cloud SDK'
         uses: 'google-github-actions/setup-gcloud@v1'
@@ -81,6 +74,13 @@ jobs:
       
       - run: gcloud auth configure-docker           
       
+      - name: Login to GCR
+        uses: docker/login-action@v2
+        with:
+          registry: gcr.io
+          username: oauth2accesstoken
+          password: ${{ steps.auth.outputs.access_token }}
+          
       - name: "Connect to cluster"
         uses: google-github-actions/get-gke-credentials@v1
         with:
