@@ -34,6 +34,7 @@ git config --local commit.gpgsign true  # Sign all commits
 git config --local gpg.x509.program gitsign  # Use Gitsign for signing
 git config --local gpg.format x509  # Gitsign expects x509 args
 git config --local tag.gpgsign true  # Sign all tags
+git config gitsign.matchCommitter true # Detect (earlier than PR) that you didn't sign with the correct browser window (OIDC) - enabling this will warn you when you commit
 
 # Demo GitHub GPG Key for inline changes - (Enforce blocked)
 # Browser update README.md in a new PR
