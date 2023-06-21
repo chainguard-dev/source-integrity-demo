@@ -40,8 +40,8 @@ jobs:
       SERVICE_ACCOUNT_NAME_DEFAULT: github-actions
 
       # GKE cluster details
-      CLUSTER_NAME_DEFAULT: chainguard-dev
-      CLUSTER_LOCATION_DEFAULT: us-west1
+      CLUSTER_NAME_DEFAULT: josborne-cluster
+      CLUSTER_LOCATION_DEFAULT: us-central1
 
     steps:
       - name: 'Setup env vars'
@@ -107,7 +107,7 @@ jobs:
       - uses: sigstore/cosign-installer@main
         if: env.ENABLE_SIGNING == 'true'
         with:
-         cosign-release: 'v1.13.1'
+         cosign-release: 'v2.0.2'
 
       - name: Sign the container image
         if: env.ENABLE_SIGNING == 'true'
@@ -115,8 +115,8 @@ jobs:
          COSIGN_EXPERIMENTAL: "true"
         run: |
           NEW_IMAGE=${{ steps.meta.outputs.tags }}@${{ steps.build-and-push.outputs.digest }}
-          cosign sign ${NEW_IMAGE} --force      
-          cosign attest --predicate <(gitsign show) ${NEW_IMAGE}
+          cosign sign ${NEW_IMAGE} --yes      
+          cosign attest --yes --predicate <(gitsign show) ${NEW_IMAGE}
         
       - name: Connect to cluster
         run: |
