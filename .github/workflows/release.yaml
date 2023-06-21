@@ -41,7 +41,7 @@ jobs:
 
       # GKE cluster details
       CLUSTER_NAME_DEFAULT: josborne-cluster
-      CLUSTER_LOCATION_DEFAULT: us-central1
+      CLUSTER_LOCATION_DEFAULT: us-central1-c
 
     steps:
       - name: 'Setup env vars'
